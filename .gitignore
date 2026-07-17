@@ -36,3 +36,5 @@ results/**/*.docx
 *.tmp-*
 .DS_Store
 Thumbs.db
+# Manuscrito do artigo: nao publicar no repositorio
+artigo_morbimortalidade_avc_rbn_2026.docx

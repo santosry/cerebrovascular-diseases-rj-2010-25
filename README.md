@@ -81,7 +81,7 @@ script original não são reutilizados.
 
 ## Resultados gerados
 
-O pipeline produz fluxos de inclusão/exclusão, cobertura temporal, completude, duplicidades, valores inválidos, quebras temporais, indicadores de internação/mortalidade hospitalar, óbitos por causa básica, séries e benchmarks de formatos. Modelos temporais exploratórios não autorizam interpretação causal.
+O pipeline produz fluxos de inclusão/exclusão, cobertura temporal, completude, duplicidades, valores inválidos, quebras temporais, indicadores de internação/mortalidade hospitalar, óbitos por causa básica, séries e benchmarks de formatos. Modelos temporais exploratórios não autorizam interpretação causal. O manuscrito do artigo (DOCX) é mantido fora do rastreamento Git e não é publicado no repositório; o código, as auditorias e as tabelas agregadas o são.
 
 Na execução concluída em 16 de julho de 2026, foram processados 192 extratos
 mensais do SIH (2010–2025) e 15 extratos anuais definitivos do SIM (2010–2024).
