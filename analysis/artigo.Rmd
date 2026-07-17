@@ -1,0 +1,533 @@
+---
+title: "Morbimortalidade cerebrovascular em dados administrativos do SIH/SUS (2010–2025) e registros de mortalidade do SIM (2010–2024), Rio de Janeiro"
+author:
+  - "Ryan de Paulo Santos"
+  - "Camila Henriques Nunes"
+  - "Gustavo de Carvalho Chaves"
+  - "Romulo da Silva Viana"
+  - "Renato Faria da Gama"
+  - "Enrique Medina-Acosta"
+date: "17 de julho de 2026"
+output:
+  word_document:
+    toc: false
+  html_document:
+    toc: true
+    toc_float: true
+params:
+  include_exploratory_models: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE, warning = FALSE, message = FALSE, results = "asis",
+  fig.align = "center", out.width = "95%"
+)
+
+read_result <- function(name, folder = "tables") {
+  path <- file.path("..", "results", folder, name)
+  if (!file.exists(path)) stop("Resultado obrigatório ausente: ", path)
+  utils::read.csv(path, stringsAsFactors = FALSE, check.names = FALSE,
+                  fileEncoding = "UTF-8")
+}
+
+fmt_n <- function(x) format(round(x), big.mark = ".", decimal.mark = ",",
+                            scientific = FALSE, trim = TRUE)
+fmt_num <- function(x, digits = 1) format(round(x, digits), nsmall = digits,
+                                          decimal.mark = ",", trim = TRUE)
+show_table <- function(x, caption = NULL, digits = 2) {
+  cat(knitr::kable(x, caption = caption, digits = digits, row.names = FALSE),
+      sep = "\n")
+}
+include_figure <- function(name, folder = file.path("figures", "publication")) {
+  path <- file.path("..", "results", folder, name)
+  if (!file.exists(path)) stop("Figura obrigatória ausente: ", path)
+  knitr::include_graphics(path)
+}
+
+sih <- read_result("indicadores_anuais_sih.csv")
+sim <- read_result("obitos_anuais_sim.csv")
+rate_sih <- read_result("taxas_estaduais_sih.csv")
+rate_sim <- read_result("taxas_estaduais_sim.csv")
+flow_sih <- read_result("fluxo_record_sih.csv", "audits")
+flow_sim <- read_result("fluxo_record_sim.csv", "audits")
+mk <- read_result("mann_kendall_tendencias_anuais.csv")
+kw <- read_result("kruskal_wallis_regioes.csv")
+dunn <- read_result("dunn_bonferroni_regioes.csv")
+assoc <- read_result("associacao_obito_hospitalar.csv")
+missing_sih <- read_result("sih_cerebrovascular_ausencia.csv", "audits")
+missing_sim <- read_result("sim_cerebrovascular_ausencia.csv", "audits")
+record <- read_result("checklist_record_preenchido.csv", "audits")
+strobe_record <- utils::read.csv(
+  file.path("..", "docs", "checklist_STROBE_RECORD.csv"),
+  stringsAsFactors = FALSE, check.names = FALSE, fileEncoding = "UTF-8"
+)
+bias <- utils::read.csv(
+  file.path("..", "docs", "matriz_vieses_record.csv"),
+  stringsAsFactors = FALSE, check.names = FALSE, fileEncoding = "UTF-8"
+)
+
+total_sih <- sum(sih$internacoes)
+deaths_sih <- sum(sih$obitos_hospitalares)
+total_sim <- sum(sim$obitos_causa_basica_cerebrovascular)
+total_sim_geo <- tail(flow_sim$n, 1)
+```
+
+# Resumo
+
+**Objetivo.** Descrever a morbimortalidade por doenças cerebrovasculares no
+estado do Rio de Janeiro em duas fontes rotineiras independentes: internações
+financiadas pelo Sistema Único de Saúde e óbitos registrados no sistema nacional
+de mortalidade.
+
+**Desenho e fontes.** Estudo observacional retrospectivo, ecológico e de séries
+temporais, relatado segundo STROBE e sua extensão RECORD. Foram examinados os
+arquivos administrativos SIH/SUS de 2010–2025 e os arquivos definitivos do SIM de
+2010–2024 disponíveis na extração de 16 de julho de 2026. A definição principal
+foi CID-10 I60–I69 no diagnóstico principal do SIH ou na causa básica do SIM;
+G45 não foi incluído.
+
+**Métodos.** Incluímos o censo dos registros elegíveis, sem amostragem. Foram
+calculados indicadores anuais e mensais, taxas quando havia denominador
+populacional compatível, Mann–Kendall e inclinação de Sen para tendências,
+Kruskal–Wallis com Dunn–Bonferroni para contrastes regionais e qui-quadrado com
+V de Cramér para associações brutas com óbito hospitalar. As análises
+inferenciais são exploratórias e não causais. SIH e SIM não foram ligados,
+pareados, correlacionados ou fundidos em qualquer nível.
+
+**Resultados.** A população estadual incluiu `r fmt_n(total_sih)` internações
+SIH/SUS, com `r fmt_n(deaths_sih)` óbitos hospitalares, e `r fmt_n(total_sim)`
+óbitos por causa básica cerebrovascular no SIM. Para análises municipais e
+taxas, `r fmt_n(total_sim_geo)` registros SIM possuíam município de residência
+válido; 292 registros com código territorial genérico permaneceram nos totais
+estaduais e foram excluídos apenas das análises geográficas. Os resultados
+temporais, regionais e de associação são apresentados com estimativas de efeito,
+multiplicidade e limitações.
+
+**Conclusão.** As duas fontes descrevem eventos distintos e complementares da
+rotina assistencial e vital, mas não permitem identificar pessoas, trajetórias
+individuais nem efeitos causais. A finalidade administrativa, a cobertura, a
+classificação diagnóstica e a disponibilidade de denominadores limitam a
+interpretação.
+
+**Palavras-chave:** doenças cerebrovasculares; SIH/SUS; SIM; dados de rotina;
+Rio de Janeiro; RECORD.
+
+# Abstract
+
+**Objective.** To describe cerebrovascular morbidity and mortality in Rio de
+Janeiro using two independent routinely collected sources: publicly funded
+hospital admissions and mortality records.
+
+**Design and data sources.** Retrospective ecological time-series study reported
+according to STROBE and RECORD. SIH/SUS administrative records covered
+2010–2025; definitive SIM records covered 2010–2024 as available on 16 July
+2026. The primary definition was ICD-10 I60–I69 in the main hospital diagnosis
+or underlying cause of death. G45 was excluded. No linkage, matching, joining or
+cross-source correlation was performed.
+
+**Results and conclusion.** The statewide analyses included `r fmt_n(total_sih)`
+admissions and `r fmt_n(total_sim)` deaths. These systems measure different
+events and cannot support individual trajectories or causal conclusions.
+
+# Introdução
+
+As doenças cerebrovasculares produzem demanda assistencial aguda, incapacidade e
+mortalidade. Sistemas de informação rotineiros permitem acompanhar grandes
+populações por longos períodos, mas sua interpretação depende da finalidade da
+coleta, da cobertura e dos algoritmos de seleção. O SIH/SUS tem finalidade
+administrativa e de faturamento e sua unidade observacional é a autorização de
+internação, não uma pessoa única. O SIM consolida declarações de óbito e pode
+sofrer revisão, atraso e variação na qualidade do preenchimento.
+
+O objetivo principal foi estimar a frequência e a distribuição temporal,
+demográfica e territorial de internações e óbitos cerebrovasculares. Como
+objetivos exploratórios, avaliamos tendências monotônicas, heterogeneidade entre
+regiões de saúde e associações brutas entre óbito hospitalar e características
+categóricas. Nenhuma hipótese causal foi formulada.
+
+# Métodos
+
+## Desenho, cenário e protocolo
+
+Estudo observacional retrospectivo, ecológico e de séries temporais no estado do
+Rio de Janeiro. O protocolo analítico versionado em
+`docs/protocolo_estudo.md` foi formalizado retrospectivamente em 17 de julho de
+2026; não houve pré-registro. Mudanças em relação ao código inicial, inclusive a
+remoção de qualquer combinação SIH–SIM, constam do `CHANGELOG.md`.
+
+## Fontes, acesso e períodos
+
+Foram usados arquivos públicos do DATASUS obtidos programaticamente com
+`microdatasus` 2.5.0. O SIH/SUS foi extraído por mês de processamento para o Rio
+de Janeiro de janeiro de 2010 a dezembro de 2025. O mês de processamento não é
+necessariamente o mês de admissão, especialmente em autorizações tardias,
+rejeitadas ou de longa permanência; por isso a interpretação temporal usa os
+campos assistenciais preservados e documenta essa limitação.
+
+No SIM, foram extraídos os arquivos definitivos de 2010–2024. Em 16 de julho de
+2026, 2025 não estava disponível na rota consultada; não foi imputado, convertido
+em zero nem descrito como definitivo. Os arquivos selecionados foram acessados
+integralmente; não houve acesso a bases restritas, prontuários ou identificadores
+diretos.
+
+## População da base e população do estudo
+
+No SIH, a população-fonte compreendeu todas as AIH dos arquivos mensais do RJ.
+Foram elegíveis registros com diagnóstico principal I60–I69 e residência no
+estado (código municipal iniciado por 33). Internações de não residentes foram
+preservadas nas auditorias, mas não nos indicadores principais.
+
+No SIM, a população-fonte compreendeu todas as declarações dos arquivos anuais
+selecionados. Foram elegíveis óbitos com causa básica I60–I69 e residência
+codificada no RJ. O código territorial genérico 330000 foi mantido nos totais
+estaduais, mas excluído de taxas, mapas e testes cuja unidade era o município.
+Não houve amostragem nem cálculo de poder: analisou-se o censo dos registros
+disponíveis que satisfizeram os critérios.
+
+## Definição do desfecho e algoritmos
+
+A definição centralizada em `config/config.yml` inclui I60, I61, I62, I63, I64,
+I65, I66, I67, I68 e I69, após remoção de pontuação e conversão para maiúsculas.
+No SIH, o campo determinante é o diagnóstico principal; no SIM, a causa básica.
+Diagnósticos secundários e causas associadas foram preservados apenas para
+auditoria. G45, ataque isquêmico transitório, não foi incluído. I69 representa
+sequelas e amplia a heterogeneidade clínica da definição; análises por subgrupo
+permitem identificá-lo separadamente.
+
+Uma revisão internacional de algoritmos administrativos encontrou desempenho
+variável para definições amplas de doença cerebrovascular e menor valor preditivo
+positivo quando o alvo era acidente vascular cerebral agudo. Essa evidência não
+substitui validação clínica local. Não foi realizada validação contra prontuários
+neste estudo; auditoria computacional de consistência não foi apresentada como
+validação diagnóstica.
+
+## Variáveis e mensuração
+
+Foram preservados no SIH ano e mês, municípios de residência e internação,
+sexo, idade, raça/cor, diagnósticos, permanência, valor nominal faturado, caráter
+do atendimento, óbito hospitalar e campos técnicos para auditoria. No SIM, foram
+preservados ano e mês do óbito, municípios de residência e ocorrência, sexo,
+idade, raça/cor, escolaridade, estado civil, causa básica, causas associadas,
+local de ocorrência e campos de controle. O dicionário completo e as regras de
+recodificação estão em `docs/dicionario_variaveis.md` e
+`docs/suplemento_metodos_record.md`.
+
+Idade foi analisada continuamente e nas faixas 0–18, 19–39, 40–59, 60–79 e 80
+anos ou mais, escolhidas para descrição do ciclo de vida e comparabilidade
+clínica; ausentes permaneceram como categoria auditável. Valores impossíveis não
+foram transformados silenciosamente. Custos são valores nominais faturados, sem
+correção monetária.
+
+## Limpeza e controle de qualidade
+
+Os dados brutos foram mantidos sem alteração e cada arquivo gerou contagens antes
+e depois do processamento. Foram verificados esquema, tipos, períodos, datas,
+CID, domínios, valores negativos ou extremos, ausência, duplicidades exatas e
+potenciais e quebras temporais. Durante a auditoria, identificou-se que a tabela
+interna de naturalidade do `microdatasus` 2.5.0 tinha chaves duplicadas e podia
+expandir linhas no `process_sim()`. A rotina passou a retirar temporariamente o
+campo NATURAL, restaurar seu código bruto e interromper a execução se a
+cardinalidade se alterar. Todo o SIM foi reprocessado; registros brutos e
+processados passaram a ter contagens idênticas. Nenhuma duplicidade exata foi
+eliminada automaticamente.
+
+## Denominadores
+
+Taxas por 100 mil habitantes usaram população municipal compatível com ano e
+residência. Censos de 2010 e 2022 e estimativas oficiais disponíveis foram
+mantidos com suas origens. Por decisão analítica, 2023 foi estimado em cada
+município por interpolação linear entre a população do Censo 2022 e a estimativa
+oficial de 2024: $P_{2023}=P_{2022}+0{,}5(P_{2024}-P_{2022})$, com arredondamento
+para pessoa inteira. O campo `metodo` distingue esses denominadores dos valores
+oficiais publicados. Registros com município genérico ou inválido não entraram
+no numerador municipal.
+
+## Análise estatística
+
+Foram estimadas contagens, proporções, média, mediana, custos e taxas. Tendências
+anuais e mensais foram avaliadas pelo teste não paramétrico de Mann–Kendall e
+inclinação de Sen. Para séries mensais, a análise sazonal foi usada para reduzir
+a violação por sazonalidade; autocorrelação residual continua sendo limitação.
+
+Diferenças entre regiões de saúde foram testadas, separadamente por ano e
+sistema, por Kruskal–Wallis usando municípios como unidades; contrastes de Dunn
+receberam correção de Bonferroni. A associação bruta entre óbito hospitalar e
+sexo, faixa etária, raça/cor, caráter, região, subgrupo CID e período foi avaliada
+por qui-quadrado. A rotina previa Monte Carlo com semente fixa e 99.999
+simulações se mais de 20% das frequências esperadas fossem menores que 5 ou se
+alguma fosse menor que 1; isso não foi necessário na base real. V de Cramér
+corrigido quantificou magnitude. Correções de Benjamini–Hochberg e/ou Bonferroni
+foram aplicadas conforme a família de testes.
+
+Os testes são exploratórios, não ajustam confundimento, dependência espacial,
+casemix nem reinternações e não sustentam causalidade. Valores de p foram
+interpretados junto a tamanho de efeito, denominador e multiplicidade.
+
+## Ausência de ligação entre fontes
+
+SIH e SIM foram analisados em trilhas independentes. Não existe identificador
+comum público e suficientemente confiável para linkage individual. Também não
+foram feitas junções, correlações ou defasagens agregadas por município, região
+ou tempo. Assim, os itens RECORD condicionais a linkage são não aplicáveis.
+
+# Resultados
+
+## Fluxo de seleção
+
+```{r flow-figure, fig.width=8.5, fig.height=7}
+include_figure("fluxo_selecao_record.png", "figures")
+```
+
+```{r flow-tables}
+show_table(flow_sih, "Fluxo RECORD do SIH/SUS")
+show_table(flow_sim, "Fluxo RECORD do SIM")
+```
+
+Dos `r fmt_n(flow_sih$n[1])` registros SIH brutos, `r fmt_n(total_sih)`
+atenderam simultaneamente à definição CID e à residência no RJ. No SIM,
+`r fmt_n(flow_sim$n[1])` registros brutos originaram `r fmt_n(total_sim)` óbitos
+elegíveis. Desses, `r fmt_n(total_sim_geo)` tinham município válido para a
+vertente geográfica; os 292 restantes permaneceram na descrição estadual.
+
+## Indicadores do SIH/SUS
+
+```{r sih-table}
+display_sih <- sih
+display_sih$mortalidade_hospitalar_pct <- round(display_sih$mortalidade_hospitalar_pct, 2)
+display_sih$permanencia_media <- round(display_sih$permanencia_media, 1)
+display_sih$custo_total <- round(display_sih$custo_total, 0)
+display_sih$custo_medio <- round(display_sih$custo_medio, 2)
+show_table(
+  display_sih[, c("ano", "internacoes", "obitos_hospitalares",
+                  "mortalidade_hospitalar_pct")],
+  "Contagens e mortalidade hospitalar anual"
+)
+show_table(
+  display_sih[, c("ano", "permanencia_media", "permanencia_mediana",
+                  "custo_total", "custo_medio")],
+  "Permanência e valores nominais faturados"
+)
+```
+
+```{r annual-series, fig.width=8.5, fig.height=5.5}
+include_figure("FIG4_series_anuais_sih_sim.png")
+```
+
+## Mortalidade registrada no SIM
+
+```{r sim-table}
+show_table(sim, "Óbitos anuais por causa básica I60–I69")
+```
+
+As contagens SIM e SIH não foram somadas nem comparadas como se medissem o mesmo
+evento: uma fonte registra causas básicas de morte e a outra, autorizações de
+internação e seu desfecho hospitalar.
+
+## Taxas e distribuição territorial
+
+```{r rates-tables}
+show_table(rate_sih, "Taxas estaduais de internação por 100 mil habitantes")
+show_table(rate_sim, "Taxas estaduais de mortalidade por 100 mil habitantes")
+```
+
+```{r maps, fig.width=8.5, fig.height=7}
+include_figure("FIG1_mapa_evolucao_taxas_sih.png")
+include_figure("FIG2_mapa_evolucao_taxas_sim.png")
+```
+
+```{r regional-series, fig.width=8.5, fig.height=6}
+include_figure("FIG5_series_regioes_saude.png")
+```
+
+## Sazonalidade e subgrupos diagnósticos
+
+```{r heatmaps, fig.width=8.5, fig.height=6, out.width='75%'}
+include_figure("FIG3_mapa_calor_sazonalidade_mensal.png")
+include_figure("FIG8_heatmap_subgrupos_cid.png")
+```
+
+## Tendências monotônicas
+
+```{r mk-table}
+mk_show <- mk
+mk_show$tau <- round(mk_show$tau, 3)
+mk_show$sen_slope <- round(mk_show$sen_slope, 3)
+mk_show$p_valor <- signif(mk_show$p_valor, 3)
+mk_show$p_bh <- signif(mk_show$p_bh, 3)
+show_table(mk_show, "Mann–Kendall e inclinação de Sen")
+```
+
+As inclinações descrevem mudança monotônica por unidade de tempo, não efeitos
+de intervenções. Mudanças de codificação, cobertura, oferta e perfil da população
+podem produzir ou modificar tendências observadas.
+
+## Diferenças inter-regionais
+
+Foram executados `r nrow(kw)` testes anuais de Kruskal–Wallis e
+`r fmt_n(nrow(dunn))` contrastes de Dunn. A interpretação considera a correção
+entre anos e, no pós-teste, Bonferroni. Esses contrastes descrevem distribuições
+municipais e não ajustam dependência espacial ou diferenças de casemix.
+
+```{r kw-table}
+kw_show <- kw[, intersect(c("sistema", "ano", "n", "regioes", "estatistica",
+                            "graus_liberdade", "p_valor",
+                            "p_bonferroni_entre_anos"), names(kw))]
+kw_show <- kw_show[order(kw_show$p_bonferroni_entre_anos), ]
+show_table(utils::head(kw_show, 12),
+           "Doze menores valores de p corrigidos nos testes regionais", 4)
+```
+
+## Associação com óbito hospitalar
+
+```{r association-table}
+assoc_show <- assoc[, c("variavel", "n", "metodo", "p_valor",
+                         "cramer_v_corrigido", "expected_min")]
+assoc_show$p_valor <- signif(assoc_show$p_valor, 3)
+assoc_show$cramer_v_corrigido <- round(assoc_show$cramer_v_corrigido, 3)
+assoc_show$expected_min <- round(assoc_show$expected_min, 1)
+show_table(assoc_show, "Associações brutas com óbito hospitalar", 3)
+```
+
+```{r association-figures, fig.width=8.5, fig.height=6}
+include_figure("FIG6_mortalidade_hospitalar_categorias.png")
+include_figure("FIG7_residuos_associacao_obito.png")
+include_figure("FIG9_tamanho_efeito_associacoes.png")
+```
+
+O grande n torna valores de p muito sensíveis a diferenças pequenas. Portanto,
+as associações foram hierarquizadas por V de Cramér e não interpretadas como
+efeitos independentes ou prognósticos.
+
+## Qualidade e dados ausentes
+
+Não foram encontrados CID inválidos ou duplicidades exatas nas bases filtradas.
+Foram sinalizadas 1.053 duplicidades potenciais no SIH e 12 no SIM, mantidas por
+não ser possível distinguir reinternação, transferência ou coincidência sem
+identificador confiável. O SIH continha 1.108 internações de não residentes,
+excluídas dos indicadores principais. A ausência por variável, inclusive 292
+códigos municipais SIM sem município específico, foi mantida nos artefatos de
+auditoria; não houve imputação.
+
+# Discussão
+
+Este estudo oferece uma descrição reproduzível de dois conjuntos de eventos de
+rotina. A longa série, o censo dos registros elegíveis, o processamento
+particionado com retomada, a verificação de cardinalidade e a separação entre
+descrição e inferência fortalecem a rastreabilidade. A concordância entre
+contagens brutas e processadas reduz o risco de perdas técnicas silenciosas, mas
+não valida a exatidão clínica dos diagnósticos.
+
+## Limitações e direção dos vieses
+
+O SIH cobre internações financiadas pelo SUS, não toda a assistência do estado;
+a direção do viés territorial depende da participação local do setor privado e
+não foi estimável. A AIH não identifica pessoa única; repetições podem
+superestimar pessoas acometidas. A finalidade de faturamento pode influenciar
+campos diagnósticos, permanência e valores. No SIM, cobertura, oportunidade e
+qualidade da causa básica podem variar no tempo e no território; estudos nacionais
+indicam melhora geral, mas desigualdades regionais persistentes.
+
+A definição I60–I69 é sensível, porém heterogênea: I64 inclui acidente vascular
+cerebral não especificado e I69, sequelas. Erros de classificação podem atuar em
+direção incerta e não foram quantificados contra padrão clínico local. Ausência
+de município reduz ligeiramente os numeradores geográficos do SIM, mas não os
+totais estaduais. A descontinuidade entre o Censo 2022 e a estimativa de 2024 e a
+interpolação linear de 2023 podem alterar taxas recentes; 2023 deve ser
+interpretado como denominador modelado, não como estimativa oficial publicada.
+
+Mann–Kendall pode ser afetado por autocorrelação; Kruskal–Wallis não modela
+dependência espacial; e qui-quadrado fornece associação bruta, sujeita a
+confundimento. A multiplicidade foi controlada estatisticamente, mas a grande
+quantidade de explorações recomenda foco em magnitude, consistência e plausibilidade.
+
+```{r bias-table}
+show_table(bias, "Matriz RECORD de vieses, direção e mitigação")
+```
+
+## Generalização
+
+Os resultados do SIH são generalizáveis apenas a AIH financiadas pelo SUS de
+residentes do RJ nos arquivos e períodos estudados, e não a todas as pessoas com
+doença cerebrovascular. Os resultados do SIM se aplicam aos óbitos de residentes
+registrados e classificados com I60–I69 como causa básica. Extrapolações para
+outros estados, assistência privada ou incidência populacional exigem dados e
+desenhos adicionais.
+
+# Conclusão
+
+O projeto documenta, separadamente, internações cerebrovasculares financiadas
+pelo SUS e mortalidade cerebrovascular registrada no Rio de Janeiro. Tendências,
+heterogeneidade regional e associações hospitalares devem ser interpretadas como
+descrição exploratória de dados de rotina. Não foi realizado linkage e nenhuma
+inferência causal ou trajetória individual pode ser derivada das fontes.
+
+# Disponibilidade de protocolo, código e dados
+
+Protocolo, scripts, testes, dicionário, checklist RECORD–STROBE e resultados
+agregados integram este repositório. A publicação em URL e o arquivamento com DOI
+dependem do depósito pelo pesquisador; nenhum endereço foi inventado. Os
+microdados brutos do DATASUS não devem ser versionados. Eles são reconstruíveis
+pelos scripts `01_baixar_sih.R` e `03_baixar_sim.R`, respeitando disponibilidade
+e revisões do provedor. O ambiente é congelado em `renv.lock`; testes usam dados
+sintéticos e o registro de sessão acompanha as execuções.
+
+# Aspectos éticos, financiamento e conflitos
+
+Foram utilizados arquivos públicos sem identificadores diretos e não houve
+contato com participantes. O enquadramento ético definitivo deve seguir a
+avaliação institucional aplicável; este texto não substitui parecer de comitê.
+O manuscrito original declara ausência de financiamento específico e de conflitos
+de interesse; essas declarações devem ser confirmadas por todos os autores antes
+da submissão.
+
+# Contribuições dos autores
+
+A lista de autores foi preservada do manuscrito original. A atribuição final das
+funções CRediT deve ser aprovada individualmente pelos autores antes da submissão;
+não foram inventadas contribuições.
+
+# Referências
+
+1. Benchimol EI, Smeeth L, Guttmann A, et al. The REporting of studies Conducted
+   using Observational Routinely-collected health Data (RECORD) Statement. *PLoS
+   Medicine*. 2015;12(10):e1001885. doi:10.1371/journal.pmed.1001885.
+2. von Elm E, Altman DG, Egger M, et al. The Strengthening the Reporting of
+   Observational Studies in Epidemiology (STROBE) statement. *PLoS Medicine*.
+   2007;4(10):e296. doi:10.1371/journal.pmed.0040296.
+3. McCormick N, Bhole V, Lacaille D, Avina-Zubieta JA. Validity of diagnostic
+   codes for acute stroke in administrative databases: a systematic review.
+   *PLoS One*. 2015;10(8):e0135834. doi:10.1371/journal.pone.0135834.
+4. Rebouças P, et al. Quality evaluation of the Brazilian Mortality Information
+   System: a scoping review. *Ciência & Saúde Coletiva*. 2025;30:e08462023.
+   doi:10.1590/1413-81232025301.08462023.
+5. Ministério da Saúde. Sistema de Informações Hospitalares do SUS: notas
+   técnicas. DATASUS.
+6. Fundação Nacional de Saúde. *Manual de procedimentos do Sistema de
+   Informações sobre Mortalidade*. Brasília: Ministério da Saúde; 2001.
+
+\newpage
+
+# Apêndice A — Checklist RECORD preenchido
+
+Os dez requisitos aplicáveis foram atendidos no relato e três requisitos
+condicionais a linkage foram classificados como não aplicáveis, sem convertê-los
+artificialmente em conformidade.
+
+```{r record-checklist}
+show_table(record, "Treze extensões RECORD")
+```
+
+# Apêndice B — Checklist STROBE–RECORD completo
+
+```{r full-checklist}
+strobe_record$referencia <- paste(strobe_record$diretriz, strobe_record$item)
+show_table(strobe_record[, c("referencia", "requisito", "status", "evidencia")],
+           "Matriz de conformidade do relato")
+```
+
+# Apêndice C — Informações de sessão
+
+```{r session-info, results='markup'}
+sessionInfo()
+```
