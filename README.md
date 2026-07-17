@@ -22,7 +22,6 @@ Dados preliminares nunca são rotulados como definitivos. Anos indisponíveis pe
 - `data/intermediate/` e `data/processed/`: artefatos regeneráveis (ignorados pelo Git).
 - `R/`: funções reutilizáveis.
 - `scripts/`: pipeline numerado.
-- `analysis/`: relatório reprodutível.
 - `results/`: tabelas agregadas, figuras, logs e auditorias.
 - `tests/`: testes apenas com dados sintéticos.
 - `docs/`: protocolo, dicionário, fluxo e relatórios técnicos.
@@ -55,8 +54,6 @@ Rscript scripts/08_calcular_indicadores.R
 Rscript scripts/09_analise_descritiva.R
 Rscript scripts/10_analise_temporal.R
 Rscript scripts/12_benchmark.R
-Rscript scripts/15_gerar_suplementos_record.R
-Rscript scripts/11_gerar_resultados.R
 Rscript -e "testthat::test_dir('tests/testthat')"
 ```
 
@@ -114,8 +111,6 @@ $R = 'C:\Program Files\R\R-4.6.0\bin\Rscript.exe'
 & $R scripts/12_benchmark.R
 & $R scripts/13_analises_inferenciais.R
 & $R scripts/14_figuras_cellpress.R
-& $R scripts/15_gerar_suplementos_record.R
-& $R scripts/11_gerar_resultados.R
 & $R -e "testthat::test_dir('tests/testthat', reporter='summary')"
 ```
 
@@ -139,7 +134,7 @@ hospitalar, V de Cramér e intervalos de Wilson.
 `scripts/14_figuras_cellpress.R` gera nove figuras em PDF, TIFF e PNG.
 
 SIH e SIM são analisados separadamente; não há pareamento, junção ou correlação
-entre registros ou agregados dos sistemas. Consulte `analysis/analises_robustas.Rmd` e
+entre registros ou agregados dos sistemas. Consulte
 `docs/relatorio_auditoria_analises_avancadas.md` para pressupostos e limitações.
 
 ## Conformidade RECORD–STROBE
