@@ -36,5 +36,13 @@ results/**/*.docx
 *.tmp-*
 .DS_Store
 Thumbs.db
-# Manuscrito do artigo: nao publicar no repositorio
+# Manuscrito do artigo e artefatos de producao: nao versionar
 artigo_morbimortalidade_avc_rbn_2026.docx
+analysis/
+work/
+scripts/format_manuscrito_record.py
+scripts/11_gerar_resultados.R
+results/manuscrito_RECORD.*
+results/rendered_manuscrito_*
+results/artigo.html
+results/analises_robustas.html
