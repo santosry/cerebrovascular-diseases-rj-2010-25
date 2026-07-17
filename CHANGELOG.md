@@ -1,7 +1,9 @@
 # Changelog
 
-## 2026-07-17 — artigo completo em DOCX e descontinuação do artigo.Rmd
+## 2026-07-17 — artigo completo em DOCX, data lock e publicação no GitHub
 
+- Repositório publicado em https://github.com/santosry/cerebrovascular-diseases-rj-2010-25
+  (etiqueta data-lock-2026-07-17).
 - O artigo acadêmico completo foi reescrito como DOCX nativo
   (`artigo_morbimortalidade_avc_rbn_2026.docx`) com linguagem 100%
   acadêmica, incorporando os 292.952 registros SIH (2010–2025) e os
@@ -10,7 +12,7 @@
 - `analysis/artigo.Rmd` foi removido; seu conteúdo foi transferido para
   o manuscrito DOCX e o script 11 foi atualizado para renderizar apenas
   `analises_robustas.Rmd`.
-- O DOCX do artigo foi excluído do rastreamento Git (.gitignore) para
+- O DOCX do artigo foi excluído do rastreamento Git (`.gitignore`) para
   publicação apenas do código e dos resultados.
 
 ## 2026-07-17 — denominador populacional de 2023
